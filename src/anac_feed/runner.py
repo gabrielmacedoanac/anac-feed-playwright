@@ -2,16 +2,16 @@ import asyncio,json,time
 from datetime import datetime,timezone
 from playwright.async_api import async_playwright
 from .config import DATA
-from .main import context,news,videos,laws,plone,consolidate
+from .main import context,news,videos,laws,consolidate
 from .generate import generate
 from .validate import validate
 async def main():
-    start=time.perf_counter();result={'noticias':[],'videos':[],'legislacoes':[],'legislacoesPlone':[]};errors={}
+    start=time.perf_counter();result={'noticias':[],'videos':[],'legislacoes':[]};errors={}
     try:result['videos']=videos()
     except Exception as e:errors['videos']=str(e)
     async with async_playwright() as pw:
         browser=await pw.chromium.launch(headless=True,args=['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage']);c=await context(browser)
-        for name,fn in [('noticias',news),('legislacoes',laws),('legislacoesPlone',plone)]:
+        for name,fn in [('noticias',news),('legislacoes',laws)]:
             try:result[name]=await fn(c)
             except Exception as e:errors[name]=str(e)
         await c.close();await browser.close()

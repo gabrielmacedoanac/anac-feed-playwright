@@ -95,19 +95,6 @@ async def laws(c):
         if len(out)>=MAX_LAWS:break
     return out
 
-async def plone(c):
-    p=await page(c,PLONE)
-    try:await debug(p,'legislacao_plone');s=BeautifulSoup(await p.content(),'lxml')
-    finally:await p.close()
-    def meta(*names):
-        for n in names:
-            for sel in (f'meta[name="{n}"]',f'meta[property="{n}"]',f'meta[itemprop="{n}"]'):
-                e=s.select_one(sel)
-                if e and e.get('content'):return clean(e.get('content'))
-        return ''
-    pub=meta('DC.date.created','DC.date.issued','article:published_time','datePublished');mod=meta('DC.date.modified','article:modified_time','dateModified');h=s.select_one('h1');title=clean(h.get_text(' ',strip=True)) if h else clean(s.title.get_text(' ',strip=True) if s.title else 'Sem título');desc=meta('description','og:description','DC.description');q=s.select_one('#content-core p,main p,article p');desc=desc or (clean(q.get_text(' ',strip=True)) if q else 'Sem descrição')
-    return [item(title,PLONE,dt(pub) or dt(mod),desc,None,'legislação',{'publishedDate':pub,'modifiedDate':mod or pub})]
-
 def dated(x):
     try:return datetime.fromisoformat((x.get('iso') or '').replace('Z','+00:00'))
     except ValueError:return datetime.min.replace(tzinfo=timezone.utc)
