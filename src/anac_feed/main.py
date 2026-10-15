@@ -77,44 +77,23 @@ def videos():
     return out
 
 async def laws(c):
-    p=await page(c,LEGISLATION)
-    try:await debug(p,'legislacao');s=BeautifulSoup(await p.content(),'lxml')
-    finally:await p.close()
-    legal=re.compile(r'\b(resolução|portaria|instrução suplementar|decisão|regulamento|rbac|emenda|ato normativo|regimento|is\s*\d)\b',re.I);datep=re.compile(r'\b\d{1,2}/\d{1,2}/\d{4}\b');out=[];seen=set()
-    for a in s.select('a[href]'):
-        title=clean(a.get_text(' ',strip=True));href=clean(a.get('href'));link=''
-        if not href or href.startswith(('#','mailto:','tel:','javascript:','data:')):continue
-        try:link=urljoin(LEGISLATION,href).strip()
-        except Exception as erro:
-            print(f'⚠️ Link inválido ignorado: {href} | {erro}');continue
-        if not link.startswith(('http://','https://')):continue
-        if 'portaria-de-pessoal' in link.lower().replace('_','-') or 'portaria de pessoal' in title.lower().replace('-',' ').replace('_',' '):continue
-        if len(title)<4 or not legal.search(title) or link in seen or '@@search' in link:continue
-        box=a
-        for _ in range(8):
-            text=clean(box.get_text(' ',strip=True))
-            if datep.search(text) or len(text)>=len(title)+20 or box.parent is None:break
-            box=box.parent
-        text=clean(box.get_text(' ',strip=True));m=datep.search(text);desc='';detail=None
-        try:
-            detail=await page(c,link);ds=BeautifulSoup(await detail.content(),'lxml');core=ds.select_one('#content-core');table=core.select_one('table') if core else None
-            if table:
-                nodes=table.select('p.Texto_Justificado') or table.select('p')
-                parts=[clean(x.get_text(' ',strip=True)) for x in nodes if clean(x.get_text(' ',strip=True))]
-                desc=clean(' '.join(parts)) if parts else clean(table.get_text(' ',strip=True))
-            if not desc and core:
-                node=core.select_one('p.Texto_Justificado') or core.select_one('p')
-                if node:desc=clean(node.get_text(' ',strip=True))
-        except Exception as erro:
-            print(f'⚠️ Link inacessível ignorado na extração da descrição: {link} | {erro}')
-        finally:
-            if detail is not None:
-                try:await detail.close()
-                except Exception:pass
-        if not desc:
-            desc=next((clean(x.get_text(' ',strip=True)) for x in box.select('p') if clean(x.get_text(' ',strip=True)) and clean(x.get_text(' ',strip=True))!=title),clean(text.replace(title,'',1)) or 'Sem descrição')
-        out.append(item(title,link,dt(m.group(0) if m else ''),desc,None,'legislação'));seen.add(link)
-        if len(out)>=MAX_LAWS:break
+    legal=re.compile(r'\b(resolução|portaria|instrução suplementar|decisão|regulamento|rbac|emenda|ato normativo|regimento|is\s*\d)\b',re.I);datep=re.compile(r'\b\d{1,2}/\d{1,2}/\d{4}\b')
+    out=[];seen=set();visited=set();url=LEGISLATION
+    while url and url not in visited and len(out)<MAX_LAWS:
+        visited.add(url);p=await page(c,url)
+        try:await debug(p,f'legislacao_{len(visited)}');s=BeautifulSoup(await p.content(),'lxml')
+        finally:await p.close()
+        for desc in s.select('.description'):
+            box=desc.find_parent(class_='tileItem') or desc.parent
+            a=box.select_one('a[href]')
+            if not a:continue
+            title=clean(a.get_text(' ',strip=True));link=urljoin(url,a.get('href'));description=clean(desc.get_text(' ',strip=True));text=clean(box.get_text(' ',strip=True));m=datep.search(text)
+            if 'portaria-de-pessoal' in link.lower().replace('_','-') or 'portaria de pessoal' in title.lower().replace('-',' ').replace('_',' '):continue
+            if len(title)<4 or not description or not legal.search(title) or link in seen or '@@search' in link or link.startswith('javascript:'):continue
+            out.append(item(title,link,dt(m.group(0) if m else ''),description,None,'legislação'));seen.add(link)
+            if len(out)>=MAX_LAWS:break
+        nxt=s.select_one('a[rel="next"],a.next,.next a,.pagination-next a,li.next a,a[title*="Próxima" i],a[title*="Seguinte" i]')
+        url=urljoin(url,nxt.get('href')) if nxt and nxt.get('href') else None
     return out
 
 def dated(x):
