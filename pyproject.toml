@@ -1,0 +1,12 @@
+[build-system]
+requires=["setuptools>=68","wheel"]
+build-backend="setuptools.build_meta"
+[project]
+name="anac-feed-playwright"
+version="1.0.0"
+requires-python=">=3.11"
+dependencies=["beautifulsoup4==4.14.2","lxml==6.0.2","playwright==1.55.0"]
+[project.scripts]
+anac-feed="anac_feed.runner:run"
+[tool.setuptools.packages.find]
+where=["src"]
