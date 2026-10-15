@@ -7,4 +7,4 @@ CHANNEL_ID='UC5ynmbMZXolM-jo2hGR31qg'
 YOUTUBE=f'https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL_ID}'
 SITE='https://gabrielmacedoanac.github.io/anac-feed-playwright/'
 UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36'
-MAX_NEWS=20; MAX_VIDEOS=15; MAX_LAWS=20; TIMEOUT=120_000
+MAX_NEWS=30; MAX_VIDEOS=30; MAX_LAWS=30; TIMEOUT=120_000
