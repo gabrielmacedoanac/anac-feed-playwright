@@ -87,7 +87,7 @@ async def laws(c):
             a=tile.select_one('a[href]');d=tile.select_one('.description')
             if not a or not d:continue
             title=clean(a.get_text(' ',strip=True));link=urljoin(url,a.get('href'));desc=clean(d.get_text(' ',strip=True));m=datep.search(clean(tile.get_text(' ',strip=True)))
-            if 'portaria-de-pessoal' in link.lower().replace('_','-') or 'portaria de pessoal' in title.lower().replace('-',' ').replace('_',' ') or len(title)<4 or not desc or link in seen:continue
+            if 'portaria-de-pessoal' in link.lower().replace('_','-') or link in seen or not desc:continue
             out.append(item(title,link,dt(m.group(0) if m else ''),desc,None,'legislação'));seen.add(link)
             if len(out)>=MAX_LAWS:break
         nxt=core.select_one('a[rel="next"],a.next,.next a,.pagination-next a,li.next a,a[title*="Próxima" i],a[title*="Seguinte" i]');url=urljoin(url,nxt.get('href')) if nxt and nxt.get('href') else None
