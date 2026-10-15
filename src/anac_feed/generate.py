@@ -1,6 +1,4 @@
-import email.utils
-import html
-import json
+import email.utils, html, json, re
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
@@ -14,10 +12,8 @@ DESCRIPTION = (
 AGENCY = "Agência Nacional de Aviação Civil (Anac)"
 AGENCY_URL = "https://www.gov.br/anac/pt-br"
 
-
 def esc(value):
     return html.escape(str(value or ""), quote=True)
-
 
 def parsed(item):
     value = item.get("iso")
@@ -232,6 +228,13 @@ def filter_script():
     </script>
     """
 
+def linkify(text):
+    text=esc(text)
+    return re.sub(
+        r'(https?://[^\s<>"\')\],;]+)',
+        r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>',
+        text,
+    )
 
 def write_simple_html(items):
     feed_items = []
@@ -250,7 +253,7 @@ def write_simple_html(items):
         ({esc(content_item.get('display'))} - {esc(content_item.get('type'))})
       </span>
       <div class="feed-item-description">
-        {esc(content_item.get('description'))}
+        {linkify(content_item.get('description'))}
       </div>
     </div>
             """
@@ -381,7 +384,7 @@ def write_semantic_html(items):
           </a>
         </h2>
         <p class="article-description" property="description">
-          {esc(content_item.get('description'))}
+          {linkify(content_item.get('description'))}
         </p>
       </div>
     </article>
