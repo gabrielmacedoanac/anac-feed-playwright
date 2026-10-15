@@ -83,16 +83,17 @@ async def laws(c):
         visited.add(url);p=await page(c,url)
         try:await debug(p,f'legislacao_{len(visited)}');s=BeautifulSoup(await p.content(),'lxml')
         finally:await p.close()
-        for desc in s.select('.description'):
-            box=desc.find_parent(class_='tileItem') or desc.parent
-            a=box.select_one('a[href]')
-            if not a:continue
-            title=clean(a.get_text(' ',strip=True));link=urljoin(url,a.get('href'));description=clean(desc.get_text(' ',strip=True));text=clean(box.get_text(' ',strip=True));m=datep.search(text)
+        core=s.select_one('#content-core')
+        if not core:break
+        for tile in core.select('.tileItem'):
+            a=tile.select_one('a[href]');d=tile.select_one('.description')
+            if not a or not d:continue
+            title=clean(a.get_text(' ',strip=True));link=urljoin(url,a.get('href'));desc=clean(d.get_text(' ',strip=True));m=datep.search(clean(tile.get_text(' ',strip=True)))
             if 'portaria-de-pessoal' in link.lower().replace('_','-') or 'portaria de pessoal' in title.lower().replace('-',' ').replace('_',' '):continue
-            if len(title)<4 or not description or not legal.search(title) or link in seen or '@@search' in link or link.startswith('javascript:'):continue
-            out.append(item(title,link,dt(m.group(0) if m else ''),description,None,'legislação'));seen.add(link)
+            if len(title)<4 or not legal.search(title) or not desc or link in seen:continue
+            out.append(item(title,link,dt(m.group(0) if m else ''),desc,None,'legislação'));seen.add(link)
             if len(out)>=MAX_LAWS:break
-        nxt=s.select_one('a[rel="next"],a.next,.next a,.pagination-next a,li.next a,a[title*="Próxima" i],a[title*="Seguinte" i]')
+        nxt=core.select_one('a[rel="next"],a.next,.next a,.pagination-next a,li.next a,a[title*="Próxima" i],a[title*="Seguinte" i]')
         url=urljoin(url,nxt.get('href')) if nxt and nxt.get('href') else None
     return out
 
