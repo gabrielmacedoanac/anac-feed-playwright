@@ -77,24 +77,20 @@ def videos():
     return out
 
 async def laws(c):
-    legal=re.compile(r'\b(resolução|portaria|instrução suplementar|decisão|regulamento|rbac|emenda|ato normativo|regimento|is\s*\d)\b',re.I);datep=re.compile(r'\b\d{1,2}/\d{1,2}/\d{4}\b')
-    out=[];seen=set();visited=set();url=LEGISLATION
+    datep=re.compile(r'\b\d{1,2}/\d{1,2}/\d{4}\b');out=[];seen=set();visited=set();url=LEGISLATION
     while url and url not in visited and len(out)<MAX_LAWS:
         visited.add(url);p=await page(c,url)
-        try:await debug(p,f'legislacao_{len(visited)}');s=BeautifulSoup(await p.content(),'lxml')
+        try:await debug(p,f'legislacao_{len(visited)}');core=BeautifulSoup(await p.content(),'lxml').select_one('#content-core')
         finally:await p.close()
-        core=s.select_one('#content-core')
         if not core:break
         for tile in core.select('.tileItem'):
             a=tile.select_one('a[href]');d=tile.select_one('.description')
             if not a or not d:continue
             title=clean(a.get_text(' ',strip=True));link=urljoin(url,a.get('href'));desc=clean(d.get_text(' ',strip=True));m=datep.search(clean(tile.get_text(' ',strip=True)))
-            if 'portaria-de-pessoal' in link.lower().replace('_','-') or 'portaria de pessoal' in title.lower().replace('-',' ').replace('_',' '):continue
-            if len(title)<4 or not legal.search(title) or not desc or link in seen:continue
+            if 'portaria-de-pessoal' in link.lower().replace('_','-') or 'portaria de pessoal' in title.lower().replace('-',' ').replace('_',' ') or len(title)<4 or not desc or link in seen:continue
             out.append(item(title,link,dt(m.group(0) if m else ''),desc,None,'legislação'));seen.add(link)
             if len(out)>=MAX_LAWS:break
-        nxt=core.select_one('a[rel="next"],a.next,.next a,.pagination-next a,li.next a,a[title*="Próxima" i],a[title*="Seguinte" i]')
-        url=urljoin(url,nxt.get('href')) if nxt and nxt.get('href') else None
+        nxt=core.select_one('a[rel="next"],a.next,.next a,.pagination-next a,li.next a,a[title*="Próxima" i],a[title*="Seguinte" i]');url=urljoin(url,nxt.get('href')) if nxt and nxt.get('href') else None
     return out
 
 def dated(x):
