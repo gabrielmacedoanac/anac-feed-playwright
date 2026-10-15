@@ -83,6 +83,7 @@ async def laws(c):
     legal=re.compile(r'\b(resolução|portaria|instrução suplementar|decisão|regulamento|rbac|emenda|ato normativo|regimento|is\s*\d)\b',re.I);datep=re.compile(r'\b\d{1,2}/\d{1,2}/\d{4}\b');out=[];seen=set()
     for a in s.select('a[href]'):
         title=clean(a.get_text(' ',strip=True));link=urljoin(LEGISLATION,a.get('href'))
+        if 'portaria-de-pessoal' in link.lower() or 'portaria de pessoal' in title.lower():continue
         if len(title)<4 or not legal.search(title) or link in seen or '@@search' in link or link.startswith('javascript:'):continue
         box=a
         for _ in range(8):
